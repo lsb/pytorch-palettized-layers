@@ -83,6 +83,7 @@ def test_conv2d():
         stride=vanilla_model.conv1.stride,
         dilation=vanilla_model.conv1.dilation,
         groups=vanilla_model.conv1.groups,
+        padding=vanilla_model.conv1.padding,
         palette_size=48
     )
     palettized_model.conv2 = InferencePalettizedConv2d(
@@ -92,6 +93,7 @@ def test_conv2d():
         stride=vanilla_model.conv2.stride,
         dilation=vanilla_model.conv2.dilation,
         groups=vanilla_model.conv2.groups,
+        padding=vanilla_model.conv2.padding,
         palette_size=32
     )
 
