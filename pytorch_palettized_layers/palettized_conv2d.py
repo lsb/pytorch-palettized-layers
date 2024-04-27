@@ -1,4 +1,4 @@
-from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -9,7 +9,7 @@ class InferencePalettizedConv2d(nn.Module):
         if lookup_table is None:
             reshaped = weight.reshape(-1,1).detach().numpy()
             # print(reshaped, "reshaped")
-            kmeans = KMeans(n_clusters=min(palette_size,256))
+            kmeans = MiniBatchKMeans(n_clusters=min(palette_size,256))
             kmeans.fit(reshaped)
             lookup_table = kmeans.cluster_centers_.squeeze()
             indices = kmeans.labels_

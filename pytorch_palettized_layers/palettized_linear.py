@@ -1,4 +1,4 @@
-from sklearn.cluster import KMeans
+from sklearn.cluster import MiniBatchKMeans
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -8,12 +8,13 @@ class InferencePalettizedLinear(nn.Module):
         super(InferencePalettizedLinear, self).__init__()
         if lookup_table is None:
             reshaped = weight.reshape(-1,1).detach().numpy()
-            kmeans = KMeans(n_clusters=min(palette_size,256))
+            kmeans = MiniBatchKMeans(n_clusters=min(palette_size,256))
             kmeans.fit(reshaped)
             lookup_table = kmeans.cluster_centers_.squeeze()
             indices = kmeans.labels_
             lookup_table = torch.tensor(lookup_table)
             weight = torch.tensor(indices, dtype=torch.uint8).reshape(weight.shape)
+            print("lut", lookup_table)
         self.lookup_table = nn.Parameter(lookup_table, requires_grad=False) # dtype arbitrary
         self.weight = nn.Parameter(weight, requires_grad=False)
         self.bias = nn.Parameter(bias, requires_grad=False) # same dtype as lookup table
