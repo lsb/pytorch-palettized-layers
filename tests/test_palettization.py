@@ -1,5 +1,6 @@
-from pytorch_palettized_layers.palettized_linear import InferencePalettizedLinear
-from pytorch_palettized_layers.palettized_conv2d import InferencePalettizedConv2d
+from pytorch_palettized_layers.palettized_linear import KMeansPalettizedLinear
+from pytorch_palettized_layers.palettized_conv2d import KMeansPalettizedConv2d
+from pytorch_palettized_layers import palettize_model
 import torch
 import torch.nn as nn
 
@@ -37,25 +38,38 @@ class Conv2dModel(nn.Module):
         print(x)
         return x
 
-def test_linear():
+def make_vanilla_linear():
     vanilla_model = TwoLayerModel()
     vanilla_model.linear1.weight.data = (6 - torch.arange(12)).reshape_as(vanilla_model.linear1.weight.data).to(torch.float32)
     vanilla_model.linear1.bias.data = torch.arange(4).to(torch.float32)
     vanilla_model.linear2.weight.data = (4 - torch.arange(8)).reshape_as(vanilla_model.linear2.weight.data).to(torch.float32)
     vanilla_model.linear2.bias.data = torch.arange(2).to(torch.float32)
+    return vanilla_model
 
+def make_vanilla_conv2d():
+    vanilla_model = Conv2dModel()
+    print(vanilla_model.conv1.weight.data)
+    vanilla_model.conv1.weight.data = (6 - torch.arange(24)).reshape_as(vanilla_model.conv1.weight.data).to(torch.float32)
+    vanilla_model.conv1.bias.data = torch.arange(4).to(torch.float32)
+    vanilla_model.conv2.weight.data = (4 - torch.arange(8)).reshape_as(vanilla_model.conv2.weight.data).to(torch.float32)
+    vanilla_model.conv2.bias.data = torch.arange(2).to(torch.float32)
+    return vanilla_model
+
+def test_linear():
     sample_input = torch.tensor([1, 2, 3], dtype=torch.float32)
+    vanilla_model = make_vanilla_linear()
+    vanilla_output = vanilla_model(sample_input)
 
     # Create a palettized model from the vanilla model
 
-    palettized_model = TwoLayerModel()
-    palettized_model.linear1 = InferencePalettizedLinear(
+    palettized_model = make_vanilla_linear()
+    palettized_model.linear1 = KMeansPalettizedLinear(
         None,
         vanilla_model.linear1.weight.data,
         vanilla_model.linear1.bias.data,
         palette_size=12
     )
-    palettized_model.linear2 = InferencePalettizedLinear(
+    palettized_model.linear2 = KMeansPalettizedLinear(
         None,
         vanilla_model.linear2.weight.data,
         vanilla_model.linear2.bias.data,
@@ -64,7 +78,15 @@ def test_linear():
 
     # Compare the outputs of the vanilla and palettized models
 
-    vanilla_output = vanilla_model(sample_input)
+    palettized_output = palettized_model(sample_input)
+    print(vanilla_output)
+    print(palettized_output)
+    assert torch.allclose(vanilla_output, palettized_output)
+
+    # Test the palettize_model function
+
+    palettized_model = make_vanilla_linear()
+    palettize_model(palettized_model, linear_palette_size=77 + 1 + 1, conv_palette_size=256)
     palettized_output = palettized_model(sample_input)
     print(vanilla_output)
     print(palettized_output)
@@ -76,7 +98,7 @@ def test_conv2d():
 
     # Create a palettized model from the vanilla model
     palettized_model = Conv2dModel()
-    palettized_model.conv1 = InferencePalettizedConv2d(
+    palettized_model.conv1 = KMeansPalettizedConv2d(
         None,
         weight=vanilla_model.conv1.weight.data,
         bias=vanilla_model.conv1.bias.data,
@@ -86,7 +108,7 @@ def test_conv2d():
         padding=vanilla_model.conv1.padding,
         palette_size=48
     )
-    palettized_model.conv2 = InferencePalettizedConv2d(
+    palettized_model.conv2 = KMeansPalettizedConv2d(
         None,
         weight=vanilla_model.conv2.weight.data,
         bias=vanilla_model.conv2.bias.data,
