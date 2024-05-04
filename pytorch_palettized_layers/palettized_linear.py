@@ -57,11 +57,11 @@ class AffinePalettizedLinear(nn.Module):
         super(AffinePalettizedLinear, self).__init__()
         if lookup_table is None:
             reshaped = weight.reshape(-1,1).detach().numpy()
-            print(reshaped, "reshaped")
+            # print(reshaped, "reshaped")
             min = reshaped.min()
             max = reshaped.max()
             palette = np.append(np.linspace(min, max, palette_size-1, dtype=np.float64), [0])
-            print(palette, "palette")
+            # print(palette, "palette")
             k = KMeans(n_clusters=len(palette))
             k.fit(np.arange(len(palette)).reshape(-1,1))
             k.cluster_centers_ = palette.reshape(-1,1)
