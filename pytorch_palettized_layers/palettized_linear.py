@@ -60,7 +60,7 @@ class AffinePalettizedLinear(nn.Module):
             # print(reshaped, "reshaped")
             min = reshaped.min()
             max = reshaped.max()
-            palette = np.append(np.linspace(min, max, palette_size-1, dtype=np.float64), [0])
+            palette = np.append([0], np.linspace(min, max, palette_size-1, dtype=np.float64))
             # print(palette, "palette")
             k = KMeans(n_clusters=len(palette))
             k.fit(np.arange(len(palette)).reshape(-1,1))

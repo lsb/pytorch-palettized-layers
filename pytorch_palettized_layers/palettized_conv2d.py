@@ -67,7 +67,7 @@ class AffinePalettizedConv2d(nn.Module):
             reshaped = weight.reshape(-1,1).detach().numpy()
             min = reshaped.min()
             max = reshaped.max()
-            palette = np.append(np.linspace(min, max, palette_size-1, dtype=np.float64), [0])
+            palette = np.append([0], np.linspace(min, max, palette_size-1, dtype=np.float64))
             k = KMeans(n_clusters=len(palette))
             k.fit(np.arange(len(palette)).reshape(-1,1))
             k.cluster_centers_ = palette.reshape(-1,1)
