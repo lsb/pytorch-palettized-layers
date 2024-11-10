@@ -107,4 +107,4 @@ class MinifloatConv2d(nn.Module):
     def forward(self, input):
         full_weights = self.weight.to(torch.float32)
         full_bias = self.bias.to(torch.float32) if self.bias is not None else None
-        return F.conv2d(input, full_weights, full_bias, self.stride, self.padding, self.dilation, self.groups)
+        return F.conv2d(input.to(torch.float32), full_weights, full_bias, self.stride, self.padding, self.dilation, self.groups)
