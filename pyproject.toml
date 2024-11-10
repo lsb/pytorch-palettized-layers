@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pytorch_palettized_layers"
-version = "0.0.3"
+version = "0.0.4"
 requires-python = ">=3.8"
 dependencies = [
     "torch",

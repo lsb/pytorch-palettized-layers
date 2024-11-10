@@ -20,12 +20,12 @@ def palettize_model(model, linear_palette_size=64, conv_palette_size=256):
         else:
             palettize_model(model=m, linear_palette_size=linear_palette_size, conv_palette_size=conv_palette_size)
 
-def minifloat_model(model):
+def minifloat_model(model, linear_e4m2=True):
     named_children = list(model.named_children())
     for n,m in named_children:
         if isinstance(m, nn.Linear):
-            setattr(model, n, MinifloatLinear(m.weight.data, (m.bias.data if m.bias is not None else None)))
+            setattr(model, n, MinifloatLinear(m.weight.data, (m.bias.data if m.bias is not None else None), linear_e4m2=linear_e4m2))
         elif isinstance(m, nn.Conv2d):
             setattr(model, n, MinifloatConv2d(m.weight.data, (m.bias.data if m.bias is not None else None), m.stride, m.dilation, m.groups, m.padding))
         else:
-            minifloat_model(model=m)
+            minifloat_model(model=m, linear_e4m2=linear_e4m2)

@@ -84,8 +84,10 @@ class AffinePalettizedLinear(nn.Module):
         return retval
 
 class MinifloatLinear(nn.Module):
-    def __init__(self, weight, bias):
+    def __init__(self, weight, bias, linear_e4m2=True):
         super(MinifloatLinear, self).__init__()
+        if linear_e4m2:
+            weight = weight.to(torch.float8_e5m2)
         self.weight = nn.Parameter(weight.to(torch.float8_e4m3fn), requires_grad=False)
         if bias is not None:
             self.bias = nn.Parameter(bias.to(torch.float8_e4m3fn), requires_grad=False)
