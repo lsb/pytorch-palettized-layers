@@ -82,3 +82,17 @@ class AffinePalettizedLinear(nn.Module):
         full_weights = self.lookup_table[self.weight.to(torch.int32)]
         retval = F.linear(input, full_weights, self.bias)        
         return retval
+
+class MinifloatLinear(nn.Module):
+    def __init__(self, weight, bias):
+        super(MinifloatLinear, self).__init__()
+        self.weight = nn.Parameter(weight.to(torch.float8_e4m3fn), requires_grad=False)
+        if bias is not None:
+            self.bias = nn.Parameter(bias.to(torch.float8_e4m3fn), requires_grad=False)
+        else:
+            self.register_parameter('bias', None)
+
+    def forward(self, input):
+        full_weights = self.weight.to(torch.float32)
+        full_bias = self.bias.to(torch.float32) if self.bias is not None else None
+        return F.linear(input, full_weights, full_bias)

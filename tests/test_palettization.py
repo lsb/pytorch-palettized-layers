@@ -1,6 +1,6 @@
-from pytorch_palettized_layers.palettized_linear import KMeansPalettizedLinear
-from pytorch_palettized_layers.palettized_conv2d import KMeansPalettizedConv2d
-from pytorch_palettized_layers import palettize_model
+from pytorch_palettized_layers.palettized_linear import KMeansPalettizedLinear, MinifloatLinear
+from pytorch_palettized_layers.palettized_conv2d import KMeansPalettizedConv2d, MinifloatConv2d
+from pytorch_palettized_layers import palettize_model, minifloat_model
 import torch
 import torch.nn as nn
 
@@ -83,6 +83,25 @@ def test_linear():
     print(palettized_output)
     assert torch.allclose(vanilla_output, palettized_output)
 
+    # Create a minifloat model from the vanilla model
+
+    fp8_model = make_vanilla_linear()
+    fp8_model.linear1 = MinifloatLinear(
+        vanilla_model.linear1.weight.data,
+        vanilla_model.linear1.bias.data
+    )
+    fp8_model.linear2 = MinifloatLinear(
+        vanilla_model.linear2.weight.data,
+        vanilla_model.linear2.bias.data
+    )
+
+    # Compare the outputs of the vanilla and minifloat models
+
+    fp8_output = fp8_model(sample_input)
+    print(vanilla_output)
+    print(fp8_output)
+    assert torch.allclose(vanilla_output, fp8_output)
+
     # Test the palettize_model function
 
     palettized_model = make_vanilla_linear()
@@ -91,6 +110,15 @@ def test_linear():
     print(vanilla_output)
     print(palettized_output)
     assert torch.allclose(vanilla_output, palettized_output)
+
+    # Test the minifloat_model function
+
+    fp8_model = make_vanilla_linear()
+    minifloat_model(fp8_model)
+    fp8_output = fp8_model(sample_input)
+    print(vanilla_output)
+    print(fp8_output)
+    assert torch.allclose(vanilla_output, fp8_output)
 
 def test_conv2d():
     vanilla_model = Conv2dModel()
@@ -119,11 +147,36 @@ def test_conv2d():
         palette_size=32
     )
 
+    # Create a minifloat model from the vanilla model
+    fp8_model = Conv2dModel()
+    fp8_model.conv1 = MinifloatConv2d(
+        vanilla_model.conv1.weight.data,
+        vanilla_model.conv1.bias.data,
+        vanilla_model.conv1.stride,
+        vanilla_model.conv1.dilation,
+        vanilla_model.conv1.groups,
+        vanilla_model.conv1.padding
+    )
+    fp8_model.conv2 = MinifloatConv2d(
+        vanilla_model.conv2.weight.data,
+        vanilla_model.conv2.bias.data,
+        vanilla_model.conv2.stride,
+        vanilla_model.conv2.dilation,
+        vanilla_model.conv2.groups,
+        vanilla_model.conv2.padding
+    )
+
     # Compare the outputs of the vanilla and palettized models
     vanilla_output = vanilla_model(sample_input)
     palettized_output = palettized_model(sample_input)
-    print(vanilla_output)
-    print(palettized_output)
+    print("vanilla output", vanilla_output)
+    print("palettized_output", palettized_output)
     assert torch.allclose(vanilla_output, palettized_output)
+
+    # Compare the outputs of the vanilla and minifloat models
+    fp8_output = fp8_model(sample_input)
+    print("vanilla output", vanilla_output)
+    print("fp8_output", fp8_output)
+    assert torch.allclose(vanilla_output, fp8_output, atol=1e-1, rtol=1e-1)
 
 

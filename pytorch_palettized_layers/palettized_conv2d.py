@@ -90,3 +90,21 @@ class AffinePalettizedConv2d(nn.Module):
     def forward(self, input):
         full_weights = self.lookup_table[self.weight.to(torch.int32)]
         return F.conv2d(input, full_weights, self.bias, self.stride, self.padding, self.dilation, self.groups)
+
+class MinifloatConv2d(nn.Module):
+    def __init__(self, weight, bias, stride, dilation, groups, padding):
+        super(MinifloatConv2d, self).__init__()
+        self.weight = nn.Parameter(weight.to(torch.float8_e4m3fn), requires_grad=False)
+        if bias is not None:
+            self.bias = nn.Parameter(bias.to(torch.float8_e4m3fn), requires_grad=False)
+        else:
+            self.register_parameter('bias', None)
+        self.stride = stride
+        self.dilation = dilation
+        self.groups = groups
+        self.padding = padding
+
+    def forward(self, input):
+        full_weights = self.weight.to(torch.float32)
+        full_bias = self.bias.to(torch.float32) if self.bias is not None else None
+        return F.conv2d(input, full_weights, full_bias, self.stride, self.padding, self.dilation, self.groups)
