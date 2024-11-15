@@ -105,11 +105,11 @@ class SymmetricLinear(nn.Module):
         # clamp the weights to the 99th percentile of the absolute value, and then quantize them into a hand-rolled qint8
         # hand-writing this quantization allows us to avoid float8 that isn't in onnxruntime-web as of dec 2024, and allows us to ensure that there are no unfortunate tensor indexing export problems as with affine palettized linear
         if not allow_weights_to_flip_signs_in_quantization:
-            assert(palette_size < 256, f"weights are stored in an int8 as values between -128 to 127, and your maximum weights will quantize as {palette_size // 2}: your larger weights will flip signs!")
+            assert palette_size < 256, f"weights are stored in an int8 as values between -128 to 127, and your maximum weights will quantize as {palette_size // 2}: your larger weights will flip signs!"
         signed_palette_size = palette_size // 2
         super(SymmetricLinear, self).__init__()
         # find the 99th percentile of the absolute value of the weights
-        max_abs = torch.quantile(weight.abs(), 0.99)
+        max_abs = torch.tensor(np.quantile(weight.abs(), 0.99))
         scaling_factor = max_abs / signed_palette_size
         scaled_weights = torch.clamp(weight, -max_abs, max_abs) / scaling_factor
         self.weight = nn.Parameter(scaled_weights.to(torch.int8), requires_grad=False)

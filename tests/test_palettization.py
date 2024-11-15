@@ -38,6 +38,24 @@ class Conv2dModel(nn.Module):
         print(x)
         return x
 
+class HeftyModel(nn.Module):
+    def __init__(self):
+        super(HeftyModel, self).__init__()
+        self.linear1 = nn.Linear(10000, 10000)
+        self.linear2 = nn.Linear(10000, 10000)
+        self.relu = nn.LeakyReLU(negative_slope=0.5)
+
+    def forward(self, x):
+        print(x)
+        x = self.linear1(x)
+        print(x)
+        x = self.relu(x)
+        print(x)
+        x = self.linear2(x)
+        print(x)
+        return x
+
+
 def make_vanilla_linear():
     vanilla_model = TwoLayerModel()
     vanilla_model.linear1.weight.data = (6 - torch.arange(12)).reshape_as(vanilla_model.linear1.weight.data).to(torch.float32)
@@ -54,6 +72,19 @@ def make_vanilla_conv2d():
     vanilla_model.conv2.weight.data = (4 - torch.arange(8)).reshape_as(vanilla_model.conv2.weight.data).to(torch.float32)
     vanilla_model.conv2.bias.data = torch.arange(2).to(torch.float32)
     return vanilla_model
+
+def test_heft():
+    hefty_model = HeftyModel()
+    hefty_zeros = torch.zeros(10000)
+    hefty_output = hefty_model(hefty_zeros)
+    print(hefty_output)
+    print(hefty_model)
+    print(len(hefty_model.linear1.weight.data.reshape(-1)))
+    symmetric_model(hefty_model, linear_palette_size=128, conv_palette_size=256)
+    symmetric_output = hefty_model(hefty_zeros)
+    print(symmetric_output)
+    print(hefty_model)
+    assert torch.allclose(hefty_output, symmetric_output, atol=1e-3, rtol=1e-3)
 
 def test_linear():
     sample_input = torch.tensor([1, 2, 3], dtype=torch.float32)

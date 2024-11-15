@@ -113,9 +113,9 @@ class SymmetricConv2d(nn.Module):
     def __init__(self, weight, bias, stride, dilation, groups, padding, palette_size=255, allow_weights_to_flip_signs_in_quantization=False):
         super(SymmetricConv2d, self).__init__()
         if not allow_weights_to_flip_signs_in_quantization:
-            assert(palette_size < 256, f"weights are stored in an int8 as values between -128 to 127, and your maximum weights will quantize as {palette_size // 2}: your larger weights will flip signs!")
+            assert palette_size < 256, f"weights are stored in an int8 as values between -128 to 127, and your maximum weights will quantize as {palette_size // 2}: your larger weights will flip signs!"
         signed_palette_size = palette_size // 2
-        max_abs = torch.quantile(weight.abs(), 0.99)
+        max_abs = torch.tensor(np.quantile(weight.abs(), 0.99))
         scaling_factor = max_abs / signed_palette_size
         scaled_weights = torch.clamp(weight, -max_abs, max_abs) / scaling_factor
         self.weight = nn.Parameter(scaled_weights.to(torch.int8), requires_grad=False)
