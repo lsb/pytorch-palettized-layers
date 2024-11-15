@@ -1,4 +1,3 @@
-from sklearn.cluster import KMeans
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -11,6 +10,7 @@ class KMeansPalettizedLinear(nn.Module):
     def __init__(self, lookup_table, weight, bias, palette_size=256):
         super(KMeansPalettizedLinear, self).__init__()
         if lookup_table is None:
+            from sklearn.cluster import KMeans
             reshaped = weight.reshape(-1,1).detach().numpy()
             kmeans = KMeans(n_clusters=min(palette_size,256))
             kmeans.fit(reshaped)
@@ -33,6 +33,7 @@ class FP8PalettizedLinear(nn.Module):
     def __init__(self, lookup_table, weight, bias, palette_size=256):
         super(FP8PalettizedLinear, self).__init__()
         if lookup_table is None:
+            from sklearn.cluster import KMeans
             reshaped = weight.reshape(-1,1).detach().cpu()
             fp8weights = np.unique(reshaped.detach().cpu().to(torch.float8_e4m3fn).to(torch.float64).numpy())
             k = KMeans(n_clusters=len(fp8weights))
@@ -57,6 +58,7 @@ class AffinePalettizedLinear(nn.Module):
     def __init__(self, lookup_table, weight, bias, palette_size=256):
         super(AffinePalettizedLinear, self).__init__()
         if lookup_table is None:
+            from sklearn.cluster import KMeans
             reshaped = weight.reshape(-1,1).detach().numpy()
             # print(reshaped, "reshaped")
             min = reshaped.min()
