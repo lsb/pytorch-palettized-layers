@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
+import warnings
 
 
 
@@ -97,4 +98,28 @@ class MinifloatLinear(nn.Module):
     def forward(self, input):
         full_weights = self.weight.to(torch.float32)
         full_bias = self.bias.to(torch.float32) if self.bias is not None else None
+        return F.linear(input, full_weights, full_bias)
+
+class SymmetricLinear(nn.Module):
+    def __init__(self, weight, bias, palette_size=255, allow_weights_to_flip_signs_in_quantization=False):
+        # clamp the weights to the 99th percentile of the absolute value, and then quantize them into a hand-rolled qint8
+        # hand-writing this quantization allows us to avoid float8 that isn't in onnxruntime-web as of dec 2024, and allows us to ensure that there are no unfortunate tensor indexing export problems as with affine palettized linear
+        if not allow_weights_to_flip_signs_in_quantization:
+            assert(palette_size < 256, f"weights are stored in an int8 as values between -128 to 127, and your maximum weights will quantize as {palette_size // 2}: your larger weights will flip signs!")
+        signed_palette_size = palette_size // 2
+        super(SymmetricLinear, self).__init__()
+        # find the 99th percentile of the absolute value of the weights
+        max_abs = torch.quantile(weight.abs(), 0.99)
+        scaling_factor = max_abs / signed_palette_size
+        scaled_weights = torch.clamp(weight, -max_abs, max_abs) / scaling_factor
+        self.weight = nn.Parameter(scaled_weights.to(torch.int8), requires_grad=False)
+        self.scaling_factor = nn.Parameter(scaling_factor, requires_grad=False)
+        if bias is not None:
+            self.bias = nn.Parameter(bias, requires_grad=False)
+        else:
+            self.register_parameter('bias', None)
+
+    def forward(self, input):
+        full_weights = self.weight.to(torch.float32) * self.scaling_factor
+        full_bias = self.bias if self.bias is not None else None
         return F.linear(input, full_weights, full_bias)

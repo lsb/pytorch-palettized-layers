@@ -108,3 +108,28 @@ class MinifloatConv2d(nn.Module):
         full_weights = self.weight.to(torch.float32)
         full_bias = self.bias.to(torch.float32) if self.bias is not None else None
         return F.conv2d(input.to(torch.float32), full_weights, full_bias, self.stride, self.padding, self.dilation, self.groups)
+
+class SymmetricConv2d(nn.Module):
+    def __init__(self, weight, bias, stride, dilation, groups, padding, palette_size=255, allow_weights_to_flip_signs_in_quantization=False):
+        super(SymmetricConv2d, self).__init__()
+        if not allow_weights_to_flip_signs_in_quantization:
+            assert(palette_size < 256, f"weights are stored in an int8 as values between -128 to 127, and your maximum weights will quantize as {palette_size // 2}: your larger weights will flip signs!")
+        signed_palette_size = palette_size // 2
+        max_abs = torch.quantile(weight.abs(), 0.99)
+        scaling_factor = max_abs / signed_palette_size
+        scaled_weights = torch.clamp(weight, -max_abs, max_abs) / scaling_factor
+        self.weight = nn.Parameter(scaled_weights.to(torch.int8), requires_grad=False)
+        self.scaling_factor = nn.Parameter(scaling_factor, requires_grad=False)
+        if bias is not None:
+            self.bias = nn.Parameter(bias, requires_grad=False)
+        else:
+            self.register_parameter('bias', None)
+        self.stride = stride
+        self.dilation = dilation
+        self.groups = groups
+        self.padding = padding
+
+    def forward(self, input):
+        full_weights = self.weight.to(torch.float32) * self.scaling_factor
+        full_bias = self.bias if self.bias is not None else None
+        return F.conv2d(input, full_weights, full_bias, self.stride, self.padding, self.dilation, self.groups)

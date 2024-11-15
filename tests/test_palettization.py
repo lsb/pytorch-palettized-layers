@@ -1,6 +1,6 @@
-from pytorch_palettized_layers.palettized_linear import KMeansPalettizedLinear, MinifloatLinear
-from pytorch_palettized_layers.palettized_conv2d import KMeansPalettizedConv2d, MinifloatConv2d
-from pytorch_palettized_layers import palettize_model, minifloat_model
+from pytorch_palettized_layers.palettized_linear import KMeansPalettizedLinear, MinifloatLinear, SymmetricLinear
+from pytorch_palettized_layers.palettized_conv2d import KMeansPalettizedConv2d, MinifloatConv2d, SymmetricConv2d
+from pytorch_palettized_layers import palettize_model, minifloat_model, symmetric_model
 import torch
 import torch.nn as nn
 
@@ -120,6 +120,15 @@ def test_linear():
     print(fp8_output)
     assert torch.allclose(vanilla_output, fp8_output)
 
+    # Test the symmetriclinear_model function
+
+    sym_model = make_vanilla_linear()
+    symmetric_model(sym_model, linear_palette_size=128, conv_palette_size=256)
+    symmetric_output = sym_model(sample_input)
+    print(vanilla_output)
+    print("symmetric linear output", symmetric_output)
+    assert torch.allclose(vanilla_output, symmetric_output, atol=5e-2, rtol=5e-2)
+
 def test_conv2d():
     vanilla_model = Conv2dModel()
     sample_input = torch.ones(1, 3, 5, 5)
@@ -166,6 +175,26 @@ def test_conv2d():
         vanilla_model.conv2.padding
     )
 
+    sym_model = Conv2dModel()
+    sym_model.conv1 = SymmetricConv2d(
+        vanilla_model.conv1.weight.data,
+        vanilla_model.conv1.bias.data,
+        vanilla_model.conv1.stride,
+        vanilla_model.conv1.dilation,
+        vanilla_model.conv1.groups,
+        vanilla_model.conv1.padding,
+        palette_size=255
+    )
+    sym_model.conv2 = SymmetricConv2d(
+        vanilla_model.conv2.weight.data,
+        vanilla_model.conv2.bias.data,
+        vanilla_model.conv2.stride,
+        vanilla_model.conv2.dilation,
+        vanilla_model.conv2.groups,
+        vanilla_model.conv2.padding,
+        palette_size=255
+    )
+
     # Compare the outputs of the vanilla and palettized models
     vanilla_output = vanilla_model(sample_input)
     palettized_output = palettized_model(sample_input)
@@ -179,4 +208,9 @@ def test_conv2d():
     print("fp8_output", fp8_output)
     assert torch.allclose(vanilla_output, fp8_output, atol=1e-1, rtol=1e-1)
 
-
+    # Compare the ouptputs of the vanilla and symmetric models
+    symmetric_model = Conv2dModel()
+    symmetric_output = sym_model(sample_input)
+    print("vanilla output", vanilla_output)
+    print("symmetric_output", symmetric_output)
+    assert torch.allclose(vanilla_output, symmetric_output, atol=5e-2, rtol=5e-2)
