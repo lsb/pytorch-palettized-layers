@@ -122,6 +122,6 @@ class SymmetricLinear(nn.Module):
             self.register_parameter('bias', None)
 
     def forward(self, input):
-        full_weights = self.weight.to(torch.float32) * self.scaling_factor
+        full_weights = (self.weight - 1).to(torch.float32) * self.scaling_factor + self.scaling_factor
         full_bias = self.bias if self.bias is not None else None
         return F.linear(input, full_weights, full_bias)
