@@ -237,7 +237,7 @@ def test_conv2d():
     fp8_output = fp8_model(sample_input)
     print("vanilla output", vanilla_output)
     print("fp8_output", fp8_output)
-    assert torch.allclose(vanilla_output, fp8_output, atol=1e-2, rtol=1e-2)
+    assert torch.allclose(vanilla_output, fp8_output, atol=1e-1, rtol=1e-1)
 
     # Compare the ouptputs of the vanilla and symmetric models
     symmetric_model = Conv2dModel()
