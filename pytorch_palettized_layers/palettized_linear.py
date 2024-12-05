@@ -115,7 +115,7 @@ class SymmetricLinear(nn.Module):
         scaling_factor = max_abs / signed_palette_size
         scaled_weights = torch.round(torch.clamp(weight, -max_abs, max_abs) / scaling_factor)
         self.weight = nn.Parameter(scaled_weights.to(torch.int8), requires_grad=False)
-        self.scaling_factor = nn.Parameter(scaling_factor, requires_grad=False)
+        self.scaling_factor = scaling_factor
         if bias is not None:
             self.bias = nn.Parameter(bias, requires_grad=False)
         else:
